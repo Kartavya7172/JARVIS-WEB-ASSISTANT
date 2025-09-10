@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jarvis Web Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="circle-area">
+    <div class="circle-core"></div>
+    <div class="particles"></div>
+    <div class="circle-ring"></div>
+    <div class="circle-ring"></div>
+    <div class="orbit-dot"></div>
+
+    <h1>🧠 Jarvis Web Assistant</h1>
+
+    <!-- 🎤 Centered Speak Button -->
+    <div class="buttons single-button">
+      <button onclick="startListening()">🎤 Speak</button>
+    </div>
+
+    <!-- Response Output -->
+    <div class="response-area">
+      <div class="response" id="responseText">Awaiting your voice command...</div>
+    </div>
+  </div>
+
+  <script>
+    async function sendCommand(command) {
+      console.log("Sending command:", command);
+
+      try {
+        const response = await fetch('/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: command })
+        });
+
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+
+        const data = await response.json();
+        console.log("Received response:", data);
+        document.getElementById('responseText').textContent = data.response;
+        speakText(data.response);
+      } catch (error) {
+        console.error("Error in sendCommand:", error);
+        document.getElementById('responseText').textContent = "Error sending command.";
+      }
+    }
+
+    function speakText(text) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(text);
+      synth.speak(utter);
+    }
+
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        sendCommand(transcript);
+      };
+
+      recognition.onerror = function(event) {
+        alert("Speech recognition error: " + event.error);
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
